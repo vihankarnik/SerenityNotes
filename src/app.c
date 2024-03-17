@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 GFile *file;
 GtkTextBuffer *textBuffer;
 bool EDITED = FALSE;
@@ -10,12 +12,26 @@ void setActiveFile(GtkWidget *window, GFile *file) {
     gtk_window_set_title(GTK_WINDOW(window), g_file_get_basename(file));
 
     char *OPEN_FILE_PATH = "assets/notes.txt";
-    
-    // TODO: Find out why this line causes 'g_object_unref: assertion 'G_IS_OBJECT (object)' failed'
-    // when the file comes from the terminal.
 
     g_object_unref(file);
 }
+
+void textBufferToFile(GFile *file){
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(textBuffer, &start, &end);
+
+    char *text = gtk_text_buffer_get_text(textBuffer, &start, &end, FALSE);
+
+    g_file_set_contents("assets/notes.txt", text, -1, NULL);    //couldnt figure out how to use GFile here
+    printf("saved");
+    EDITED = FALSE;
+    gsize len = strlen(text);
+    //these dont work in this version
+    //g_file_replace_contents_async(file, text, len, NULL, FALSE, G_FILE_CREATE_NONE, NULL, NULL, NULL);
+    //g_file_replace(file, )
+    //g_file_replace_contents(file, "hey", 3, NULL, TRUE, G_FILE_CREATE_NONE, NULL, NULL, NULL);
+}
+
 static void onTextChange(GtkWidget *textBuffer, GtkWidget *window) {
     if (EDITED) {
         return;
@@ -23,13 +39,15 @@ static void onTextChange(GtkWidget *textBuffer, GtkWidget *window) {
 
     EDITED = TRUE;
 
-    const char *title = gtk_window_get_title(GTK_WINDOW(window));
-    size_t titleLength = strlen(title);
+    textBufferToFile(file);
 
-    char newTitle[titleLength + 2];
-    sprintf(newTitle, "* %s", title);
+    //const char *title = gtk_window_get_title(GTK_WINDOW(window));
+    //size_t titleLength = strlen(title);
 
-    gtk_window_set_title(GTK_WINDOW(window), newTitle);
+    //char newTitle[titleLength + 2];
+    //sprintf(newTitle, "* %s", title);
+
+    //gtk_window_set_title(GTK_WINDOW(window), newTitle);
 }
 void buildTextView(GtkWidget *window) {
     GtkWidget *scrolledWindow = gtk_scrolled_window_new();
