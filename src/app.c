@@ -49,11 +49,14 @@ static void onTextChange(GtkWidget *textBuffer, GtkWidget *window) {
 
     //gtk_window_set_title(GTK_WINDOW(window), newTitle);
 }
-void buildTextView(GtkWidget *window) {
-    GtkWidget *scrolledWindow = gtk_scrolled_window_new();
-    GtkWidget *textView = gtk_text_view_new_with_buffer(textBuffer);    // creates textView with already existing textBuffer
+void buildTextView(GtkWidget *window, GtkWidget *grid, int i) {
+    GtkWidget *textView = gtk_text_view_new_with_buffer(textBuffer);    // textView is a container that displays a buffer
 
-    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(textView), 1);    // the 1 is for character wise wrapping
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(textView), 1);    // 1- Character wise wrapping
+
+    GtkWidget *scrolledWindow = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);  // Set scroll policies
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolledWindow), textView);
 
     gtk_text_view_set_left_margin(GTK_TEXT_VIEW(textView), 2);  // number of pixels to pad
     gtk_text_view_set_right_margin(GTK_TEXT_VIEW(textView), 2);
@@ -62,10 +65,11 @@ void buildTextView(GtkWidget *window) {
 
     g_signal_connect(textBuffer, "changed", G_CALLBACK(onTextChange), window);
 
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolledWindow),
-                                  textView);
-
-    gtk_window_set_child(GTK_WINDOW(window), scrolledWindow);
+    gtk_widget_set_hexpand (scrolledWindow, TRUE);
+    gtk_widget_set_vexpand (scrolledWindow, TRUE);
+    gtk_widget_set_size_request(scrolledWindow, 400, 300);
+    gtk_grid_attach(GTK_GRID(grid), scrolledWindow, i, 0, 1, 1);
+    //hierarchy- window > overlay > grid > scrolledWindow > textView
 }
 
 void fileToTextBuffer(GFile *file) {
@@ -80,17 +84,27 @@ void fileToTextBuffer(GFile *file) {
 
 static void activate(GtkApplication *app){
     GtkWidget *window = gtk_application_window_new(app);
-    fileToTextBuffer(file);
 
     gtk_window_set_title(GTK_WINDOW(window), "SereneNotes");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
-    
-    //GtkWidget *grid;
-    //gtk_container_add(GTK_CONTAINER(window), grid);
-    //GtkWidget *asdfasdf = gtk_entry_new();
-    //gtk_grid_attach(GTK_GRID(grid), asdfasdf, 0, 0, 1, 1);
 
-    buildTextView(window);  // this will make the text appear and edit
+    fileToTextBuffer(file); //extracts file to populate textBuffer
+
+    GtkWidget *grid = gtk_grid_new();
+    GtkWidget *overlay = gtk_overlay_new();
+    gtk_overlay_set_child(GTK_OVERLAY(overlay), grid);
+
+    for(int i = 0; i < 1; i++){
+
+        buildTextView(window, grid, i);  // this will make the text appear and edit
+        
+    }
+    gtk_window_set_child(GTK_WINDOW(window), overlay);
+    gtk_widget_set_halign (overlay, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (overlay, GTK_ALIGN_START);
+    
+    //gtk_container_add(GTK_CONTAINER(window), grid);
+
     if(file){
         setActiveFile(window, file);
     }
