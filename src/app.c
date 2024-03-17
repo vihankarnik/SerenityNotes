@@ -1,10 +1,14 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
-#include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#define MAX_FILES 3
+#include <sys/stat.h>   //creating folders
+#include <dirent.h> //counting files
+#define MAX_FILES 12
 bool EDITED = FALSE;
+int fileCount;
+
+GtkWidget *window;
+GtkWidget *grid;
 
 typedef struct{
     GFile *file;
@@ -27,14 +31,31 @@ void fileToTextBuffer(GFile *file, GtkTextBuffer *textBuffer) {
 }
 
 void loadFiles(){
-    for(int i = 0; i < MAX_FILES; i++){
-        char filepath[40];  // file1.txt, file2.txt
+
+    int check = mkdir("assets"); // 0 if it makes a folder, -1 if already exist
+    if(check == 0){
+        FILE *fptr = fopen("assets/note0.txt", "w");
+        fclose(fptr);   // just to create the first file
+    }
+        // counting files
+    struct dirent *dir;
+    DIR *d = opendir("assets");
+
+    fileCount = -2; // . and .. also count as folders
+    while((dir = readdir(d)) != NULL)
+        fileCount++;
+
+    closedir(d);
+
+    for(int i = 0; i < fileCount; i++){
+        char filepath[20];  // eg. assets/note0.txt
         sprintf(filepath, "assets/note%d.txt", i);
-        Files[i].filepath = filepath;
+
         Files[i].file = g_file_new_for_path(filepath);
         Files[i].textBuffer = gtk_text_buffer_new(NULL);
+        Files[i].filepath = filepath;
+            //this function reads the file and puts it in its own buffer
         fileToTextBuffer(Files[i].file, Files[i].textBuffer);
-        printf("\n%s\n", Files[i].filepath);
     }
 }
 
@@ -56,7 +77,7 @@ void textBufferToFile(GFile *file, GtkTextBuffer *textBuffer, int i){
 }
 
 void saveFiles(){
-    for(int i = 0; i < MAX_FILES; i++){
+    for(int i = 0; i < fileCount; i++){
         textBufferToFile(Files[i].file, Files[i].textBuffer, i);
     }
     EDITED = FALSE;
@@ -75,8 +96,58 @@ static void onTextChange(GtkTextBuffer currentTextBuffer) {
     //sprintf(newTitle, "* %s", title);
     //gtk_window_set_title(GTK_WINDOW(window), newTitle);
 }
-void buildTextView(GtkWidget *window, GtkWidget *grid, int i) {
+
+void createNewFile(GtkWidget *newFileButton, gpointer data){
+    int i = GPOINTER_TO_INT(data);
+    char newFilePath[20];
+    sprintf(newFilePath, "assets/note%d.txt", i);
+    FILE *fptr = fopen(newFilePath, "w");
+    fclose(fptr);   // just to create the file
+
+    loadFiles();    // load the new file into Files
+            //TODO pls update the window or append a grid item
+    //first remote the last grid item then append textview and another plus button
+    gtk_grid_remove(GTK_GRID(grid), newFileButton);
+
     GtkTextBuffer *currentTextBuffer = Files[i].textBuffer;
+    GtkWidget *textView = gtk_text_view_new_with_buffer(currentTextBuffer);    // textView is a container that displays a buffer
+
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(textView), 1);    // 1- Character wise wrapping
+
+    GtkWidget *scrolledWindow = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);  // Set scroll policies
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolledWindow), textView);
+
+    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(textView), 2);  // number of pixels to pad
+    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(textView), 2);
+    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(textView), 2);
+    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(textView), 2);
+
+    g_signal_connect(currentTextBuffer, "changed", G_CALLBACK(onTextChange), NULL);
+
+    gtk_widget_set_size_request(scrolledWindow, 400, 300);
+    gtk_grid_attach(GTK_GRID(grid), scrolledWindow, i%4, i/4, 1, 1);    // keeps 4 notes in a row
+
+    i++;
+
+    // make newfilebutton again
+    GtkWidget *newNewFileButton = gtk_button_new_with_label("+");
+
+    gpointer gi = GINT_TO_POINTER(i);
+    g_signal_connect(newNewFileButton, "clicked", G_CALLBACK(createNewFile), gi);
+    gtk_grid_attach(GTK_GRID(grid), newNewFileButton, i%4, i/4, 1, 1);
+}
+
+void buildTextView(GtkWidget *window, GtkWidget *grid, int i, int last) {
+    GtkTextBuffer *currentTextBuffer = Files[i].textBuffer;
+    if(last){
+        GtkWidget *newFileButton = gtk_button_new_with_label("+");
+
+        gpointer gi = GINT_TO_POINTER(i);
+        g_signal_connect(newFileButton, "clicked", G_CALLBACK(createNewFile), gi);
+        gtk_grid_attach(GTK_GRID(grid), newFileButton, i%4, i/4, 1, 1);
+        return;
+    }
     GtkWidget *textView = gtk_text_view_new_with_buffer(currentTextBuffer);    // textView is a container that displays a buffer
 
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(textView), 1);    // 1- Character wise wrapping
@@ -95,26 +166,26 @@ void buildTextView(GtkWidget *window, GtkWidget *grid, int i) {
     gtk_widget_set_hexpand (scrolledWindow, TRUE);
     gtk_widget_set_vexpand (scrolledWindow, TRUE);
     gtk_widget_set_size_request(scrolledWindow, 400, 300);
-    gtk_grid_attach(GTK_GRID(grid), scrolledWindow, i, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), scrolledWindow, i%4, i/4, 1, 1);    // keeps 4 notes in a row
     //hierarchy- window > overlay > grid > scrolledWindow > textView
 }
 
 static void activate(GtkApplication *app){
-    GtkWidget *window = gtk_application_window_new(app);
+    window = gtk_application_window_new(app);
 
     gtk_window_set_title(GTK_WINDOW(window), "SereneNotes");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
     loadFiles();    //Files is a global array of FileData which contains GFile and its textBuffer
 
-    GtkWidget *grid = gtk_grid_new();
+    grid = gtk_grid_new();
     GtkWidget *overlay = gtk_overlay_new();
     gtk_overlay_set_child(GTK_OVERLAY(overlay), grid);
     gtk_window_set_child(GTK_WINDOW(window), overlay);
         //hierarchy- window > overlay > grid > scrolledWindow > textView
 
-    for(int i = 0; i < MAX_FILES; i++){
-        buildTextView(window, grid, i);  // this will make the text appear and edit
+    for(int i = 0; i < fileCount+1; i++){
+        buildTextView(window, grid, i, i == fileCount);  // this will make the text appear and edit
     }
     gtk_widget_set_halign (overlay, GTK_ALIGN_CENTER);
     gtk_widget_set_valign (overlay, GTK_ALIGN_START);
@@ -128,14 +199,13 @@ static void activate(GtkApplication *app){
 int main(){
     GtkApplication *app;
     //gtk_init();   //GtkApplication object does it for us
-    int status;
 
     app = gtk_application_new("my.first.app", G_APPLICATION_HANDLES_OPEN);
-    
 
         // once application starts, it makes a new window
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
         // this runs the application till we close it
+    int status;
     status = g_application_run(G_APPLICATION(app), 0, NULL);
         // this releases the reference app
     g_object_unref(app);
