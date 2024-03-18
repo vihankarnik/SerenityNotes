@@ -139,8 +139,15 @@ void createNewFile(GtkWidget *newFileButton, gpointer data){
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);  // Set scroll policies
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolledWindow), textView);
 
+
     // TODO make the grid look better
         //tried adding some css to the scrolledWindows
+    gtk_widget_add_css_class(scrolledWindow, "rounded");
+    const gchar *css_data = ".rounded { border-radius: 12px; }";
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_string(css_provider, css_data);
+
+
     gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 6);
 
@@ -194,6 +201,13 @@ void buildTextView(GtkWidget *window, GtkWidget *grid, int i, int last) {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolledWindow), textView);
 
     // TODO make the grid look better
+        //tried adding some css to the scrolledWindows
+    gtk_widget_add_css_class(scrolledWindow, "rounded");
+    const gchar *css_data = ".rounded { border-radius: 12px; }";
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_string(css_provider, css_data);
+
+
     gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 6);
 
