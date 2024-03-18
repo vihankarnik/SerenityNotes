@@ -12,8 +12,10 @@ GtkWidget *grid;
 
 typedef struct{
     GFile *file;
+    GtkWidget *scrolledWindow;
     GtkTextBuffer *textBuffer;
     char *filepath;
+    GtkWidget *deleteButton;
 } FileData;
 
 FileData Files[MAX_FILES];
@@ -31,19 +33,26 @@ void fileToTextBuffer(GFile *file, GtkTextBuffer *textBuffer) {
 }
 
 void loadFiles(){
+    mkdir("assets"); // 0 if it makes a folder, -1 if already exist
 
-    int check = mkdir("assets"); // 0 if it makes a folder, -1 if already exist
-    if(check == 0){
-        FILE *fptr = fopen("assets/note0.txt", "w");
+        FILE *fptr = fopen("assets/note0.txt", "a");
         fclose(fptr);   // just to create the first file
-    }
         // counting files
     struct dirent *dir;
     DIR *d = opendir("assets");
 
     fileCount = -2; // . and .. also count as folders
-    while((dir = readdir(d)) != NULL)
+    while((dir = readdir(d)) != NULL){
+        if(fileCount >= 0){
+            char newfilepath[20];
+            sprintf(newfilepath, "assets/note%d.txt", fileCount);
+            char oldfilepath[20];
+            sprintf(oldfilepath, "assets/%s", dir->d_name);
+            int value = rename(oldfilepath, newfilepath);
+        }
+
         fileCount++;
+    }
 
     closedir(d);
 
@@ -71,9 +80,7 @@ void textBufferToFile(GFile *file, GtkTextBuffer *textBuffer, int i){
     //filepath encoding didnt let me use this
     //g_file_set_contents(filepath, text, len, NULL);    //couldnt figure out how to use GFile here
     //these dont work in this version
-    //g_file_replace_contents_async(file, text, len, NULL, FALSE, G_FILE_CREATE_NONE, NULL, NULL, NULL);
     //g_file_replace(file, text, len, fakjsdlkfjalskdjf)
-    //g_file_replace_contents(file, "hey", 3, NULL, TRUE, G_FILE_CREATE_NONE, NULL, NULL, NULL);
 }
 
 void saveFiles(){
@@ -97,15 +104,28 @@ static void onTextChange(GtkTextBuffer currentTextBuffer) {
     //gtk_window_set_title(GTK_WINDOW(window), newTitle);
 }
 
+
+void deleteNote(GtkWidget *deleteButton, gpointer *data){
+    int i = GPOINTER_TO_INT(data);
+
+    printf("i is %d\n", i);
+    gtk_grid_remove(GTK_GRID(grid), Files[i].scrolledWindow);
+    gtk_grid_remove(GTK_GRID(grid), Files[i].deleteButton);
+    // delete the file and rename all files
+    g_file_delete(Files[i].file, NULL, NULL);
+    loadFiles();    // load updated file list into Files
+}
+
 void createNewFile(GtkWidget *newFileButton, gpointer data){
     int i = GPOINTER_TO_INT(data);
+
     char newFilePath[20];
     sprintf(newFilePath, "assets/note%d.txt", i);
-    FILE *fptr = fopen(newFilePath, "w");
+    FILE *fptr = fopen(newFilePath, "a");
     fclose(fptr);   // just to create the file
 
     loadFiles();    // load the new file into Files
-            //TODO pls update the window or append a grid item
+
     //first remote the last grid item then append textview and another plus button
     gtk_grid_remove(GTK_GRID(grid), newFileButton);
 
@@ -115,8 +135,14 @@ void createNewFile(GtkWidget *newFileButton, gpointer data){
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(textView), 1);    // 1- Character wise wrapping
 
     GtkWidget *scrolledWindow = gtk_scrolled_window_new();
+    Files[i].scrolledWindow = scrolledWindow;
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);  // Set scroll policies
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolledWindow), textView);
+
+    // TODO make the grid look better
+        //tried adding some css to the scrolledWindows
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 6);
 
     gtk_text_view_set_left_margin(GTK_TEXT_VIEW(textView), 2);  // number of pixels to pad
     gtk_text_view_set_right_margin(GTK_TEXT_VIEW(textView), 2);
@@ -128,9 +154,19 @@ void createNewFile(GtkWidget *newFileButton, gpointer data){
     gtk_widget_set_size_request(scrolledWindow, 400, 300);
     gtk_grid_attach(GTK_GRID(grid), scrolledWindow, i%4, i/4, 1, 1);    // keeps 4 notes in a row
 
+        // delete button
+    Files[i].deleteButton = gtk_button_new_with_label("Del");
+        // Set the button's margin to push it to the top right corner
+    gtk_widget_set_margin_start(GTK_WIDGET(Files[i].deleteButton), 380);
+    gtk_widget_set_margin_top(GTK_WIDGET(Files[i].deleteButton), 280);
+
+    g_signal_connect(Files[i].deleteButton, "clicked", G_CALLBACK(deleteNote), GINT_TO_POINTER(i));
+    gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(Files[i].deleteButton), i%4, i/4, 1, 1);
+
+
     i++;
 
-    // make newfilebutton again
+        // make newfilebutton again
     GtkWidget *newNewFileButton = gtk_button_new_with_label("+");
 
     gpointer gi = GINT_TO_POINTER(i);
@@ -140,10 +176,10 @@ void createNewFile(GtkWidget *newFileButton, gpointer data){
 
 void buildTextView(GtkWidget *window, GtkWidget *grid, int i, int last) {
     GtkTextBuffer *currentTextBuffer = Files[i].textBuffer;
+    gpointer gi = GINT_TO_POINTER(i);
     if(last){
         GtkWidget *newFileButton = gtk_button_new_with_label("+");
 
-        gpointer gi = GINT_TO_POINTER(i);
         g_signal_connect(newFileButton, "clicked", G_CALLBACK(createNewFile), gi);
         gtk_grid_attach(GTK_GRID(grid), newFileButton, i%4, i/4, 1, 1);
         return;
@@ -153,8 +189,14 @@ void buildTextView(GtkWidget *window, GtkWidget *grid, int i, int last) {
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(textView), 1);    // 1- Character wise wrapping
 
     GtkWidget *scrolledWindow = gtk_scrolled_window_new();
+    Files[i].scrolledWindow = scrolledWindow;
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);  // Set scroll policies
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolledWindow), textView);
+
+    // TODO make the grid look better
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 6);
+
 
     gtk_text_view_set_left_margin(GTK_TEXT_VIEW(textView), 2);  // number of pixels to pad
     gtk_text_view_set_right_margin(GTK_TEXT_VIEW(textView), 2);
@@ -163,11 +205,21 @@ void buildTextView(GtkWidget *window, GtkWidget *grid, int i, int last) {
 
     g_signal_connect(currentTextBuffer, "changed", G_CALLBACK(onTextChange), NULL);
 
-    gtk_widget_set_hexpand (scrolledWindow, TRUE);
-    gtk_widget_set_vexpand (scrolledWindow, TRUE);
+    //gtk_widget_set_hexpand (scrolledWindow, TRUE);
+    //gtk_widget_set_vexpand (scrolledWindow, TRUE);
     gtk_widget_set_size_request(scrolledWindow, 400, 300);
     gtk_grid_attach(GTK_GRID(grid), scrolledWindow, i%4, i/4, 1, 1);    // keeps 4 notes in a row
     //hierarchy- window > overlay > grid > scrolledWindow > textView
+
+        // delete button
+    Files[i].deleteButton = gtk_button_new_with_label("Del");
+        // Set the button's margin to push it to the top right corner
+    gtk_widget_set_margin_start(GTK_WIDGET(Files[i].deleteButton), 380);
+    gtk_widget_set_margin_top(GTK_WIDGET(Files[i].deleteButton), 280);
+
+
+    g_signal_connect(Files[i].deleteButton, "clicked", G_CALLBACK(deleteNote), GINT_TO_POINTER(i));
+    gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(Files[i].deleteButton), i%4, i/4, 1, 1);
 }
 
 static void activate(GtkApplication *app){
