@@ -2,7 +2,9 @@
 A simple and lightweight note taking application written completely in C using the GTK Toolkit
 
 ### Project Overview
-
+* This project is a simple note-taking application built using the GTK toolkit in C. It allows users to create, edit, and delete text-based notes, which are stored as individual files on the system.
+* GTK serves as the primary graphical user interface toolkit and it completely handles the UI building of this application. It uses various GtkWidgets such as windows, grid layouts, text views and buttons and arranges them accordingly 
+* Input-Output of files is handled by the GIO and GLib system library APIs that comes with GTK4.
 
 
 
