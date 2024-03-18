@@ -1,4 +1,4 @@
-<h2 align="center"> SereneNotes </h2>
+# SereneNotes
 A simple and lightweight note taking application written completely in C using the GTK Toolkit
 
 ### Project Overview
