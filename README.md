@@ -1,6 +1,13 @@
-## SereneNotes
+<h2 align="center"> SereneNotes </h2>
+A simple and lightweight note taking application written completely in C using the GTK Toolkit
+
+### Project Overview
+
+
+
 
 ### How to execute
+To build on Windows, follow the steps:
 * Recommended to use [MSYS2](https://www.msys2.org/) which provides a Unix-like environment and a command-line interface for compiling and building on Linux software that runs on Windows.
 * Run the `MinGW64` environment that comes with `MSYS2`.
 * Install and set up git:  
@@ -13,7 +20,7 @@ pacman -S mingw-w64-x86_64-gtk4
 ```
 * Clone repository to your computer using SSH:  
 ```
-git clone git@github.com:vihankarnik/beam.git
+git clone git@github.com:vihankarnik/SereneNotes.git
 ```
 * Go to `/src` inside the new folder created and compile the C code:  
 ```
