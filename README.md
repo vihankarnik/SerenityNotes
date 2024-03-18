@@ -6,7 +6,10 @@ A simple and lightweight note taking application written completely in C using t
 * GTK serves as the primary graphical user interface toolkit and it completely handles the UI building of this application. It uses various GtkWidgets such as windows, grid layouts, text views and buttons and arranges them accordingly 
 * Input-Output of files is handled by the GIO and GLib system library APIs that comes with GTK4.
 
-
+### Features
+* Create, edit, and delete text notes that save automatically to drive.
+* User-friendly interface with a grid layout for organizing notes.
+* Automatically saves notes to individual text files.
 
 ### How to execute
 To build on Windows, follow the steps:
@@ -33,3 +36,10 @@ gcc app.c -o app.exe $(pkg-config --cflags --libs gtk4)
 ```
 ./app.exe
 ```
+
+### Usage
+* Upon launching the application, you will be presented with a grid layout containing your existing notes, or a single note if it is your first time.
+* To create a new note, click the "+" button.
+* To edit a note, simply click on the text area and start typing.
+* To delete a note, click the "Del" button associated with the note.
+* Changes are automatically saved as you type.
