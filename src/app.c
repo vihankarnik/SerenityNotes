@@ -239,7 +239,7 @@ void buildTextView(GtkWidget *window, GtkWidget *grid, int i, int last) {
 static void activate(GtkApplication *app){
     window = gtk_application_window_new(app);
 
-    gtk_window_set_title(GTK_WINDOW(window), "SereneNotes");
+    gtk_window_set_title(GTK_WINDOW(window), "SerenityNotes");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
     loadFiles();    //Files is a global array of FileData which contains GFile and its textBuffer
