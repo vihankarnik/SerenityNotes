@@ -1,4 +1,4 @@
-# SereneNotes
+# serenity-notes
 A simple and lightweight note taking application written completely in C using the GTK Toolkit
 
 <div align="center"><img align="center" width=700px src=Picture1.jpg></div>
