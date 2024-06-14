@@ -31,7 +31,7 @@ git clone git@github.com:vihankarnik/SereneNotes.git
 ```
 * Go to `/src` inside the new folder created and compile the C code:  
 ```
-cd serenenotes/src
+cd serenity-notes/src
 gcc app.c -o app.exe $(pkg-config --cflags --libs gtk4)
 ```
 * Run the compiled file:
