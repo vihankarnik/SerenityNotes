@@ -27,7 +27,7 @@ pacman -S mingw-w64-x86_64-gtk4
 ```
 * Clone repository to your computer using SSH:  
 ```
-git clone git@github.com:vihankarnik/SereneNotes.git
+git clone git@github.com:vihankarnik/serenity-notes.git
 ```
 * Go to `/src` inside the new folder created and compile the C code:  
 ```
